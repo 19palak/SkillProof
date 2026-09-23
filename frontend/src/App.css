@@ -1,0 +1,1471 @@
+/* =========================================================
+   SKILLPROOF — PREMIUM WEB3 UI
+========================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  background: #f7f8fc;
+  color: #111827;
+  overflow-x: hidden;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+/* =========================================================
+   NAVBAR
+========================================================= */
+
+.navbar {
+  height: 76px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 7%;
+
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  background: rgba(255, 255, 255, 0.82);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.logo {
+  font-family: "Space Grotesk", sans-serif;
+
+  font-size: 26px;
+  font-weight: 700;
+
+  letter-spacing: -0.8px;
+
+  color: #111827;
+}
+
+.logo span {
+  color: #6366f1;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.nav-links a {
+  position: relative;
+
+  text-decoration: none;
+
+  color: #64748b;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  transition: 0.25s ease;
+}
+
+.nav-links a::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: -7px;
+
+  width: 0;
+  height: 2px;
+
+  background: #6366f1;
+
+  transition: width 0.25s ease;
+}
+
+.nav-links a:hover {
+  color: #4f46e5;
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+.connect-btn {
+  border: none;
+
+  padding: 11px 19px;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #6366f1,
+      #4f46e5
+    );
+
+  color: white;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 20px rgba(79, 70, 229, 0.22);
+
+  transition: 0.25s ease;
+}
+
+.connect-btn:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 12px 28px rgba(79, 70, 229, 0.32);
+}
+
+.connect-btn:active {
+  transform: translateY(0);
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero {
+  min-height: 680px;
+
+  padding: 100px 7%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 80px;
+
+  position: relative;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(99, 102, 241, 0.16),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 15% 80%,
+      rgba(139, 92, 246, 0.10),
+      transparent 25%
+    ),
+    linear-gradient(
+      135deg,
+      #f8faff,
+      #eef2ff
+    );
+}
+
+/* decorative glow */
+
+.hero::before {
+  content: "";
+
+  position: absolute;
+
+  width: 450px;
+  height: 450px;
+
+  right: -180px;
+  top: -180px;
+
+  border-radius: 50%;
+
+  background: rgba(99, 102, 241, 0.08);
+
+  filter: blur(10px);
+
+  pointer-events: none;
+}
+
+.hero::after {
+  content: "";
+
+  position: absolute;
+
+  width: 300px;
+  height: 300px;
+
+  left: -160px;
+  bottom: -160px;
+
+  border-radius: 50%;
+
+  background: rgba(124, 58, 237, 0.08);
+
+  pointer-events: none;
+}
+
+.hero-content {
+  max-width: 650px;
+
+  position: relative;
+
+  z-index: 2;
+}
+
+.badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  background: rgba(99, 102, 241, 0.09);
+
+  border: 1px solid rgba(99, 102, 241, 0.18);
+
+  color: #4f46e5;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  margin-bottom: 25px;
+
+  box-shadow:
+    0 6px 20px rgba(99, 102, 241, 0.08);
+}
+
+.badge::before {
+  content: "●";
+
+  font-size: 8px;
+
+  color: #22c55e;
+}
+
+.hero h1 {
+  font-family: "Space Grotesk", sans-serif;
+
+  font-size: clamp(48px, 6vw, 68px);
+
+  line-height: 1.02;
+
+  margin-bottom: 25px;
+
+  letter-spacing: -3px;
+
+  color: #0f172a;
+}
+
+.hero h1 span {
+  color: #6366f1;
+
+  background:
+    linear-gradient(
+      90deg,
+      #4f46e5,
+      #7c3aed
+    );
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-content > p {
+  font-size: 17px;
+
+  line-height: 1.75;
+
+  color: #64748b;
+
+  max-width: 580px;
+}
+
+.hero-buttons {
+  display: flex;
+
+  gap: 14px;
+
+  margin-top: 35px;
+}
+
+.primary-btn,
+.secondary-btn {
+  padding: 14px 22px;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.25s ease;
+}
+
+.primary-btn {
+  border: none;
+
+  background:
+    linear-gradient(
+      135deg,
+      #6366f1,
+      #4f46e5
+    );
+
+  color: white;
+
+  box-shadow:
+    0 12px 25px
+    rgba(79, 70, 229, 0.22);
+}
+
+.primary-btn:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 18px 35px
+    rgba(79, 70, 229, 0.30);
+}
+
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.85);
+
+  color: #334155;
+
+  border: 1px solid #dbe1ea;
+}
+
+.secondary-btn:hover {
+  color: #4f46e5;
+
+  border-color: #a5b4fc;
+
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 10px 25px rgba(15, 23, 42, 0.06);
+}
+
+/* =========================================================
+   CREDENTIAL PREVIEW
+========================================================= */
+
+.credential-card {
+  width: 405px;
+
+  padding: 30px;
+
+  position: relative;
+
+  border-radius: 22px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,0.96),
+      rgba(248,250,252,0.92)
+    );
+
+  border: 1px solid rgba(148, 163, 184, 0.25);
+
+  box-shadow:
+    0 35px 80px
+    rgba(15, 23, 42, 0.15),
+
+    0 0 0 1px
+    rgba(255,255,255,0.6);
+
+  transform: rotate(1.5deg);
+
+  transition: 0.4s ease;
+
+  z-index: 2;
+}
+
+.credential-card:hover {
+  transform:
+    rotate(0deg)
+    translateY(-8px);
+
+  box-shadow:
+    0 45px 90px
+    rgba(15, 23, 42, 0.18);
+}
+
+.credential-card::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  border-radius: inherit;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(99,102,241,0.10),
+      transparent 40%
+    );
+
+  pointer-events: none;
+}
+
+.card-header {
+  display: flex;
+
+  justify-content: space-between;
+
+  position: relative;
+
+  color: #64748b;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.4px;
+}
+
+.verified {
+  color: #16a34a;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+}
+
+.verified::before {
+  content: "✓";
+
+  width: 17px;
+  height: 17px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #dcfce7;
+
+  font-size: 10px;
+}
+
+.profile {
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+
+  margin: 32px 0;
+}
+
+.avatar {
+  width: 58px;
+  height: 58px;
+
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #e0e7ff,
+      #ede9fe
+    );
+
+  color: #4f46e5;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-weight: 800;
+
+  box-shadow:
+    0 8px 20px
+    rgba(99,102,241,0.15);
+}
+
+.profile h3 {
+  font-family: "Space Grotesk", sans-serif;
+
+  font-size: 18px;
+
+  color: #111827;
+}
+
+.profile p {
+  margin-top: 5px;
+
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+.credential-info {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  border-top: 1px solid #e2e8f0;
+
+  padding-top: 20px;
+}
+
+.credential-info small {
+  color: #94a3b8;
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+.credential-info p {
+  margin-top: 7px;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  color: #1e293b;
+}
+
+.blockchain-status {
+  margin-top: 25px;
+
+  padding: 13px 15px;
+
+  border-radius: 10px;
+
+  background: #f0fdf4;
+
+  border: 1px solid #bbf7d0;
+
+  color: #15803d;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+/* =========================================================
+   COMMON SECTIONS
+========================================================= */
+
+.issue-section,
+.student-dashboard,
+.employer-dashboard,
+.features,
+.how-it-works {
+  padding: 110px 7%;
+}
+
+.issue-section,
+.employer-dashboard,
+.features {
+  background: #ffffff;
+}
+
+.student-dashboard,
+.how-it-works {
+  background:
+    linear-gradient(
+      180deg,
+      #f8fafc,
+      #f1f5f9
+    );
+}
+
+.section-heading {
+  text-align: center;
+
+  max-width: 700px;
+
+  margin: 0 auto 50px;
+}
+
+.section-heading p:first-child {
+  color: #6366f1;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 2.5px;
+
+  text-transform: uppercase;
+
+  margin-bottom: 12px;
+}
+
+.section-heading h2 {
+  font-family: "Space Grotesk", sans-serif;
+
+  font-size: clamp(30px, 4vw, 42px);
+
+  line-height: 1.15;
+
+  margin-bottom: 15px;
+
+  color: #0f172a;
+
+  letter-spacing: -1.5px;
+}
+
+.section-heading h2 + p {
+  color: #64748b;
+
+  font-size: 15px;
+
+  line-height: 1.7;
+}
+
+/* =========================================================
+   FORM CARD
+========================================================= */
+
+.issue-card,
+.student-card {
+  max-width: 850px;
+
+  margin: 0 auto;
+
+  padding: 42px;
+
+  border-radius: 22px;
+
+  background:
+    rgba(255,255,255,0.92);
+
+  border: 1px solid #e2e8f0;
+
+  box-shadow:
+    0 25px 70px
+    rgba(15, 23, 42, 0.08);
+}
+
+.issue-card:hover,
+.student-card:hover {
+  box-shadow:
+    0 30px 80px
+    rgba(15, 23, 42, 0.10);
+}
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.form-group {
+  margin-bottom: 22px;
+}
+
+.form-group label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #334155;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+.form-group input {
+  width: 100%;
+
+  padding: 14px 16px;
+
+  background: #ffffff;
+
+  color: #0f172a;
+
+  border: 1px solid #d5dce7;
+
+  border-radius: 10px;
+
+  outline: none;
+
+  font-size: 14px;
+
+  transition: 0.2s ease;
+
+  box-shadow:
+    inset 0 1px 2px
+    rgba(15, 23, 42, 0.02);
+}
+
+.form-group input::placeholder {
+  color: #a1aab8;
+}
+
+.form-group input:hover {
+  border-color: #a5b4fc;
+}
+
+.form-group input:focus {
+  border-color: #6366f1;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(99,102,241,0.10);
+}
+
+/* =========================================================
+   ISSUE BUTTON
+========================================================= */
+
+.issue-btn {
+  width: 100%;
+
+  margin-top: 5px;
+}
+
+/* =========================================================
+   TRANSACTION MESSAGE
+========================================================= */
+
+.transaction-message {
+  margin-top: 20px;
+
+  padding: 15px 18px;
+
+  border-radius: 12px;
+
+  background: #eef2ff;
+
+  border: 1px solid #c7d2fe;
+
+  color: #4338ca;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+
+  text-align: center;
+}
+
+/* =========================================================
+   CREDENTIAL RESULT
+========================================================= */
+
+.credential-result {
+  margin-top: 30px;
+
+  padding: 30px;
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #f8fafc,
+      #ffffff
+    );
+
+  border: 1px solid #e2e8f0;
+}
+
+.credential-result-header {
+  display: flex;
+
+  justify-content: flex-end;
+
+  margin-bottom: 18px;
+}
+
+.verified-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 7px 12px;
+
+  border-radius: 999px;
+
+  background: #ecfdf5;
+
+  color: #15803d;
+
+  border: 1px solid #bbf7d0;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.5px;
+}
+
+.verified-badge::before {
+  content: "✓";
+}
+
+.credential-result h3 {
+  font-family: "Space Grotesk", sans-serif;
+
+  font-size: 23px;
+
+  color: #0f172a;
+
+  margin-bottom: 25px;
+}
+
+.credential-details {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+.credential-details p {
+  color: #64748b;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+
+  word-break: break-word;
+}
+
+.credential-details strong {
+  color: #1e293b;
+}
+
+.credential-hash {
+  padding: 14px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 9px;
+
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size: 11px !important;
+
+  word-break: break-all;
+}
+
+/* =========================================================
+   QR CODE
+========================================================= */
+
+.qr-section {
+  margin-top: 35px;
+
+  padding: 32px;
+
+  border-radius: 18px;
+
+  text-align: center;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(99,102,241,0.12),
+      transparent 45%
+    ),
+    #f8fafc !important;
+
+  border: 1px solid #c7d2fe;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+.qr-section::before {
+  content: "";
+
+  position: absolute;
+
+  width: 180px;
+  height: 180px;
+
+  left: 50%;
+  top: -120px;
+
+  transform: translateX(-50%);
+
+  border-radius: 50%;
+
+  background: rgba(99,102,241,0.08);
+}
+
+.qr-section h3 {
+  position: relative;
+
+  margin-bottom: 8px;
+
+  font-family: "Space Grotesk", sans-serif;
+
+  color: #0f172a;
+}
+
+.qr-section p {
+  position: relative;
+
+  color: #64748b;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+
+  margin-bottom: 22px;
+}
+
+.qr-section canvas {
+  position: relative;
+
+  padding: 12px;
+
+  background: white;
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 15px 35px
+    rgba(15, 23, 42, 0.12);
+}
+
+/* =========================================================
+   VERIFICATION RESULT
+========================================================= */
+
+.verification-status {
+  margin-top: 25px;
+
+  padding: 30px;
+
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ecfdf5,
+      #f0fdf4
+    );
+
+  border: 1px solid #bbf7d0;
+
+  text-align: center;
+}
+
+.verification-status span {
+  display: block;
+
+  font-size: 34px;
+
+  color: #16a34a;
+
+  margin-bottom: 10px;
+}
+
+.verification-status strong {
+  display: block;
+
+  color: #15803d;
+
+  font-size: 17px;
+
+  margin-bottom: 8px;
+}
+
+.verification-status p {
+  color: #64748b;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+}
+
+/* =========================================================
+   FEATURES
+========================================================= */
+
+.feature-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 24px;
+}
+
+.feature-card {
+  padding: 32px;
+
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  transition: 0.3s ease;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: "";
+
+  position: absolute;
+
+  width: 120px;
+  height: 120px;
+
+  right: -50px;
+  top: -50px;
+
+  border-radius: 50%;
+
+  background: rgba(99,102,241,0.07);
+
+  transition: 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-7px);
+
+  border-color: #c7d2fe;
+
+  box-shadow:
+    0 20px 50px
+    rgba(15, 23, 42, 0.09);
+}
+
+.feature-card:hover::before {
+  transform: scale(1.5);
+}
+
+.feature-icon {
+  width: 50px;
+  height: 50px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 20px;
+
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #eef2ff,
+      #ede9fe
+    );
+
+  color: #4f46e5;
+
+  font-size: 22px;
+}
+
+.feature-card h3 {
+  position: relative;
+
+  margin-bottom: 12px;
+
+  font-family: "Space Grotesk", sans-serif;
+
+  color: #0f172a;
+
+  font-size: 18px;
+}
+
+.feature-card p {
+  position: relative;
+
+  color: #64748b;
+
+  line-height: 1.7;
+
+  font-size: 14px;
+}
+
+/* =========================================================
+   HOW IT WORKS
+========================================================= */
+
+.steps {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 24px;
+}
+
+.step {
+  padding: 32px;
+
+  border-radius: 18px;
+
+  background: rgba(255,255,255,0.85);
+
+  border: 1px solid #e2e8f0;
+
+  transition: 0.3s ease;
+}
+
+.step:hover {
+  transform: translateY(-5px);
+
+  box-shadow:
+    0 18px 45px
+    rgba(15, 23, 42, 0.07);
+}
+
+.step-number {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+
+  margin-bottom: 20px;
+
+  border-radius: 10px;
+
+  background: #eef2ff;
+
+  color: #4f46e5;
+
+  font-size: 13px;
+
+  font-weight: 800;
+}
+
+.step h3 {
+  font-family: "Space Grotesk", sans-serif;
+
+  margin-bottom: 12px;
+
+  color: #0f172a;
+}
+
+.step p {
+  color: #64748b;
+
+  line-height: 1.7;
+
+  font-size: 14px;
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+footer {
+  padding: 45px 7%;
+
+  background:
+    radial-gradient(
+      circle at 20% 0%,
+      rgba(99,102,241,0.12),
+      transparent 30%
+    ),
+    #0b1120;
+
+  color: white;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+footer .logo {
+  color: white;
+}
+
+footer p {
+  color: #94a3b8;
+
+  font-size: 13px;
+}
+
+/* =========================================================
+   SCROLL OFFSET
+========================================================= */
+
+section {
+  scroll-margin-top: 90px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1050px) {
+
+  .navbar,
+  footer {
+    padding-left: 5%;
+    padding-right: 5%;
+  }
+
+  .hero {
+    padding-left: 5%;
+    padding-right: 5%;
+
+    gap: 40px;
+  }
+
+  .issue-section,
+  .student-dashboard,
+  .employer-dashboard,
+  .features,
+  .how-it-works {
+    padding-left: 5%;
+    padding-right: 5%;
+  }
+
+}
+
+@media (max-width: 900px) {
+
+  .hero {
+    flex-direction: column;
+
+    text-align: center;
+
+    padding-top: 80px;
+    padding-bottom: 80px;
+  }
+
+  .hero-content {
+    max-width: 700px;
+  }
+
+  .hero-content > p {
+    margin: auto;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .credential-card {
+    width: min(405px, 100%);
+  }
+
+  .feature-grid,
+  .steps {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-links a {
+    display: none;
+  }
+
+}
+
+@media (max-width: 600px) {
+
+  .navbar {
+    height: 68px;
+
+    padding:
+      0 20px;
+  }
+
+  .logo {
+    font-size: 22px;
+  }
+
+  .connect-btn {
+    padding: 9px 13px;
+
+    font-size: 11px;
+  }
+
+  .hero {
+    padding:
+      65px 20px
+      70px;
+  }
+
+  .hero h1 {
+    font-size: 43px;
+
+    letter-spacing: -2px;
+  }
+
+  .hero-content > p {
+    font-size: 15px;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+  }
+
+  .hero-buttons button {
+    width: 100%;
+  }
+
+  .credential-card {
+    padding: 23px;
+
+    transform: none;
+  }
+
+  .issue-section,
+  .student-dashboard,
+  .employer-dashboard,
+  .features,
+  .how-it-works {
+    padding:
+      75px 20px;
+  }
+
+  .section-heading h2 {
+    font-size: 30px;
+  }
+
+  .issue-card,
+  .student-card {
+    padding: 23px 18px;
+
+    border-radius: 17px;
+  }
+
+  .credential-result {
+    padding: 20px;
+  }
+
+  .qr-section {
+    padding: 25px 15px;
+  }
+
+  .credential-info {
+    flex-direction: column;
+
+    gap: 15px;
+  }
+
+  footer {
+    padding:
+      35px 20px;
+
+    flex-direction: column;
+
+    text-align: center;
+
+    gap: 15px;
+  }
+
+}
+/* ============================= */
+/* DOCUMENT UPLOAD / HASHING */
+/* ============================= */
+
+.form-group input[type="file"] {
+  padding: 12px;
+  cursor: pointer;
+}
+
+.file-preview {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(120, 90, 255, 0.25);
+  border-radius: 10px;
+  background: rgba(120, 90, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  font-size: 13px;
+}
+
+.file-preview strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-preview span {
+  opacity: 0.65;
+  white-space: nowrap;
+}
+
+.hash-input {
+  font-family: monospace;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+.hash-success {
+  color: #22c55e !important;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 7px;
+  opacity: 0.65;
+  font-size: 12px;
+}

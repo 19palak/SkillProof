@@ -1,0 +1,49 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_34-15cfe52bfd3e5403a0ae4645ce25b98818ed3c04",
+  "solcVersion": "0.8.34",
+  "solcLongVersion": "0.8.34+commit.80d5c536",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.16.0"
+  },
+  "userSourceNameMap": {
+    "contracts/SkillProof.sol": "project/contracts/SkillProof.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "osaka",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/SkillProof.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ncontract SkillProof {\n\n    struct Credential {\n        uint256 id;\n        address student;\n        address issuer;\n        string credentialType;\n        string metadataURI;\n        bytes32 credentialHash;\n        uint256 issuedAt;\n        bool revoked;\n    }\n\n    uint256 private nextCredentialId = 1;\n\n    mapping(uint256 => Credential) private credentials;\n\n    // Stores which addresses are authorized to issue credentials\n    mapping(address => bool) public authorizedIssuers;\n\n    // The contract deployer becomes the first authorized issuer\n    address public owner;\n\n    event IssuerAuthorized(address indexed issuer);\n    event IssuerRevoked(address indexed issuer);\n\n    event CredentialIssued(\n        uint256 indexed credentialId,\n        address indexed student,\n        address indexed issuer\n    );\n\n    event CredentialRevoked(\n        uint256 indexed credentialId,\n        address indexed issuer\n    );\n\n    constructor() {\n        owner = msg.sender;\n        authorizedIssuers[msg.sender] = true;\n    }\n\n    modifier onlyOwner() {\n        require(\n            msg.sender == owner,\n            \"Only owner can perform this action\"\n        );\n        _;\n    }\n\n    modifier onlyAuthorizedIssuer() {\n        require(\n            authorizedIssuers[msg.sender],\n            \"Not an authorized issuer\"\n        );\n        _;\n    }\n\n    function authorizeIssuer(\n        address issuer\n    ) public onlyOwner {\n\n        authorizedIssuers[issuer] = true;\n\n        emit IssuerAuthorized(issuer);\n    }\n\n    function revokeIssuer(\n        address issuer\n    ) public onlyOwner {\n\n        authorizedIssuers[issuer] = false;\n\n        emit IssuerRevoked(issuer);\n    }\n\n    function issueCredential(\n        address student,\n        string memory credentialType,\n        string memory metadataURI,\n        bytes32 credentialHash\n    )\n        public\n        onlyAuthorizedIssuer\n        returns (uint256)\n    {\n        uint256 credentialId = nextCredentialId;\n\n        credentials[credentialId] = Credential({\n            id: credentialId,\n            student: student,\n            issuer: msg.sender,\n            credentialType: credentialType,\n            metadataURI: metadataURI,\n            credentialHash: credentialHash,\n            issuedAt: block.timestamp,\n            revoked: false\n        });\n\n        nextCredentialId++;\n\n        emit CredentialIssued(\n            credentialId,\n            student,\n            msg.sender\n        );\n\n        return credentialId;\n    }\n\n    function getCredential(\n        uint256 credentialId\n    )\n        public\n        view\n        returns (Credential memory)\n    {\n        require(\n            credentials[credentialId].id != 0,\n            \"Credential does not exist\"\n        );\n\n        return credentials[credentialId];\n    }\n\n    function verifyCredential(\n        uint256 credentialId\n    )\n        public\n        view\n        returns (bool)\n    {\n        require(\n            credentials[credentialId].id != 0,\n            \"Credential does not exist\"\n        );\n\n        return !credentials[credentialId].revoked;\n    }\n\n    function revokeCredential(\n        uint256 credentialId\n    )\n        public\n    {\n        require(\n            credentials[credentialId].id != 0,\n            \"Credential does not exist\"\n        );\n\n        require(\n            credentials[credentialId].issuer == msg.sender,\n            \"Only issuer can revoke\"\n        );\n\n        credentials[credentialId].revoked = true;\n\n        emit CredentialRevoked(\n            credentialId,\n            msg.sender\n        );\n    }\n}"
+      }
+    }
+  }
+}
