@@ -1,72 +1,75 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ethers } from "ethers";
-import { QRCodeCanvas } from "qrcode.react";
-import "./App.css";
-
 import {
   CONTRACT_ADDRESS,
   CONTRACT_ABI,
 } from "./contract";
+import "./App.css";
 
 function App() {
   // =========================
   // WALLET
   // =========================
   const [account, setAccount] = useState("");
-  const [walletStatus, setWalletStatus] = useState("");
+  const [connecting, setConnecting] = useState(false);
 
   // =========================
-  // INSTITUTION / ISSUE
+  // ISSUE CREDENTIAL
   // =========================
   const [studentAddress, setStudentAddress] = useState("");
   const [credentialType, setCredentialType] = useState("");
-
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [credentialHash, setCredentialHash] = useState("");
   const [metadataURI, setMetadataURI] = useState("");
 
-  const [uploading, setUploading] = useState(false);
+  // PDF
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [credentialHash, setCredentialHash] = useState("");
+
   const [issuing, setIssuing] = useState(false);
-  const [issueStatus, setIssueStatus] = useState("");
-
-  // =========================
-  // STUDENT
-  // =========================
-  const [credentialId, setCredentialId] = useState("");
-  const [studentCredential, setStudentCredential] =
-    useState(null);
-
-  const [studentStatus, setStudentStatus] =
+  const [issuedCredentialId, setIssuedCredentialId] =
     useState("");
 
   // =========================
-  // EMPLOYER
+  // STUDENT DASHBOARD
+  // =========================
+  const [credentialId, setCredentialId] = useState("");
+  const [credential, setCredential] = useState(null);
+  const [fetching, setFetching] = useState(false);
+
+  // =========================
+  // VERIFY
   // =========================
   const [verifyId, setVerifyId] = useState("");
   const [verificationResult, setVerificationResult] =
     useState(null);
-
-  const [verifyStatus, setVerifyStatus] =
-    useState("");
+  const [verifying, setVerifying] = useState(false);
 
   // =========================
-  // REVOCATION
+  // REVOKE
   // =========================
   const [revokeId, setRevokeId] = useState("");
-  const [revokeStatus, setRevokeStatus] =
-    useState("");
+  const [revoking, setRevoking] = useState(false);
+
+  // =========================
+  // MESSAGES
+  // =========================
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   // =========================
   // CONNECT WALLET
   // =========================
-  async function connectWallet() {
+  const connectWallet = async () => {
+    setError("");
+    setMessage("");
+
     try {
       if (!window.ethereum) {
-        setWalletStatus(
-          "MetaMask is not installed. Please install MetaMask."
+        throw new Error(
+          "MetaMask is not installed."
         );
-        return;
       }
+
+      setConnecting(true);
 
       const provider =
         new ethers.BrowserProvider(
@@ -79,65 +82,43 @@ function App() {
           []
         );
 
-      if (accounts.length === 0) {
-        setWalletStatus(
+      if (!accounts.length) {
+        throw new Error(
           "No wallet account found."
         );
-        return;
       }
 
       setAccount(accounts[0]);
 
-      setWalletStatus(
+      setMessage(
         "Wallet connected successfully."
       );
+    } catch (err) {
+      console.error(err);
 
-    } catch (error) {
-      console.error(error);
-
-      setWalletStatus(
-        error.message ||
-          "Failed to connect wallet."
-      );
-    }
-  }
-
-  // =========================
-  // HANDLE ACCOUNT CHANGE
-  // =========================
-  useEffect(() => {
-    if (!window.ethereum) return;
-
-    const handleAccountsChanged = (
-      accounts
-    ) => {
-      if (accounts.length === 0) {
-        setAccount("");
-        setWalletStatus(
-          "Wallet disconnected."
+      if (err.code === 4001) {
+        setError(
+          "MetaMask connection was rejected."
         );
       } else {
-        setAccount(accounts[0]);
+        setError(
+          err.reason ||
+            err.shortMessage ||
+            err.message ||
+            "Failed to connect wallet."
+        );
       }
-    };
-
-    window.ethereum.on(
-      "accountsChanged",
-      handleAccountsChanged
-    );
-
-    return () => {
-      window.ethereum.removeListener(
-        "accountsChanged",
-        handleAccountsChanged
-      );
-    };
-  }, []);
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   // =========================
-  // CONTRACT HELPER
+  // CONTRACT
   // =========================
-  async function getContract() {
+  const getContract = async (
+    withSigner = false
+  ) => {
     if (!window.ethereum) {
       throw new Error(
         "MetaMask is not installed."
@@ -149,86 +130,77 @@ function App() {
         window.ethereum
       );
 
-    const signer =
-      await provider.getSigner();
+    if (withSigner) {
+      const signer =
+        await provider.getSigner();
 
-    const contract =
-      new ethers.Contract(
+      return new ethers.Contract(
         CONTRACT_ADDRESS,
         CONTRACT_ABI,
         signer
       );
+    }
 
-    return contract;
-  }
+    return new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      provider
+    );
+  };
 
   // =========================
-  // PDF UPLOAD + SHA256 HASH
+  // PDF UPLOAD + SHA256
   // =========================
-  async function handleDocumentUpload(
+  const handleFileChange = async (
     event
-  ) {
+  ) => {
+    setError("");
+    setMessage("");
+    setCredentialHash("");
+
     const file =
       event.target.files?.[0];
 
     if (!file) {
+      setSelectedFile(null);
       return;
     }
 
-    setSelectedFile(file);
-    setCredentialHash("");
-    setMetadataURI("");
-    setIssueStatus("");
-
-    // Only PDF
     if (
-      file.type !==
-      "application/pdf"
+      file.type !== "application/pdf" &&
+      !file.name
+        .toLowerCase()
+        .endsWith(".pdf")
     ) {
-      setIssueStatus(
-        "Please upload a PDF certificate."
-      );
-
       setSelectedFile(null);
 
-      return;
-    }
+      event.target.value = "";
 
-    // Maximum 10 MB
-    if (
-      file.size >
-      10 * 1024 * 1024
-    ) {
-      setIssueStatus(
-        "PDF must be smaller than 10 MB."
+      setError(
+        "Please select a PDF certificate."
       );
-
-      setSelectedFile(null);
 
       return;
     }
 
     try {
-      setUploading(true);
+      setSelectedFile(file);
 
-      // ---------------------------------
-      // STEP 1: Generate SHA-256 hash
-      // ---------------------------------
-      const arrayBuffer =
+      const fileBuffer =
         await file.arrayBuffer();
 
       const hashBuffer =
         await window.crypto.subtle.digest(
           "SHA-256",
-          arrayBuffer
+          fileBuffer
         );
 
-      const hashArray =
-        Array.from(
-          new Uint8Array(hashBuffer)
-        );
+      const hashArray = Array.from(
+        new Uint8Array(hashBuffer)
+      );
 
-      const hashHex =
+      const hash =
+        "0x" +
         hashArray
           .map((byte) =>
             byte
@@ -237,86 +209,46 @@ function App() {
           )
           .join("");
 
-      const finalHash =
-        `0x${hashHex}`;
+      setCredentialHash(hash);
 
-      setCredentialHash(
-        finalHash
+      setMessage(
+        "Certificate fingerprint generated successfully."
       );
+    } catch (err) {
+      console.error(err);
 
-      // ---------------------------------
-      // STEP 2: Upload PDF to backend
-      // ---------------------------------
-      const formData =
-        new FormData();
-
-      formData.append(
-        "file",
-        file
-      );
-
-      const response =
-        await fetch(
-          "http://localhost:5001/upload",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-      const result =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.details ||
-            result.error ||
-            "Failed to upload document."
-        );
-      }
-
-      // ---------------------------------
-      // STEP 3: Store IPFS URI
-      // ---------------------------------
-      setMetadataURI(
-        result.ipfsURI
-      );
-
-      setIssueStatus(
-        "Certificate uploaded to IPFS and SHA-256 hash generated successfully."
-      );
-
-    } catch (error) {
-      console.error(
-        "Upload error:",
-        error
-      );
-
-      setIssueStatus(
-        error.message ||
-          "Failed to upload certificate."
-      );
-
+      setSelectedFile(null);
       setCredentialHash("");
-      setMetadataURI("");
 
-    } finally {
-      setUploading(false);
+      setError(
+        "Could not generate the certificate hash."
+      );
     }
-  }
+  };
 
   // =========================
   // ISSUE CREDENTIAL
   // =========================
-  async function issueCredential() {
-    try {
-      setIssueStatus("");
+  const issueCredential = async (
+    event
+  ) => {
+    event.preventDefault();
 
+    setError("");
+    setMessage("");
+    setIssuedCredentialId("");
+
+    try {
       if (!account) {
-        setIssueStatus(
-          "Please connect your wallet first."
+        throw new Error(
+          "Please connect the authorized issuer wallet first."
         );
-        return;
+      }
+
+      if (!studentAddress) {
+        throw new Error(
+          "Please enter the student wallet address."
+        );
       }
 
       if (
@@ -324,527 +256,420 @@ function App() {
           studentAddress
         )
       ) {
-        setIssueStatus(
-          "Please enter a valid student wallet address."
+        throw new Error(
+          "Invalid student wallet address."
         );
-        return;
       }
 
-      if (
-        !credentialType.trim()
-      ) {
-        setIssueStatus(
+      if (!credentialType.trim()) {
+        throw new Error(
           "Please enter the credential type."
         );
-        return;
+      }
+
+      if (!metadataURI.trim()) {
+        throw new Error(
+          "Please enter the IPFS metadata URI."
+        );
       }
 
       if (!selectedFile) {
-        setIssueStatus(
-          "Please upload a certificate PDF."
+        throw new Error(
+          "Please upload a PDF certificate."
         );
-        return;
       }
 
       if (!credentialHash) {
-        setIssueStatus(
+        throw new Error(
           "Certificate hash has not been generated."
         );
-        return;
       }
 
-      if (!metadataURI) {
-        setIssueStatus(
-          "Certificate has not been uploaded to IPFS."
+      if (
+        !/^0x[a-fA-F0-9]{64}$/.test(
+          credentialHash
+        )
+      ) {
+        throw new Error(
+          "Invalid SHA-256 hash."
         );
-        return;
       }
 
       setIssuing(true);
 
       const contract =
-        await getContract();
+        await getContract(true);
 
-      // Check whether current wallet
-      // is an authorized issuer
-      const isAuthorized =
+      // Check issuer permission
+      const authorized =
         await contract.authorizedIssuers(
           account
         );
 
-      if (!isAuthorized) {
-        setIssueStatus(
-          "This wallet is not an authorized issuer."
+      if (!authorized) {
+        throw new Error(
+          "This wallet is not an authorized issuer. Connect Account #0 / the contract owner."
         );
-
-        setIssuing(false);
-
-        return;
       }
 
-      setIssueStatus(
+      setMessage(
         "Please confirm the transaction in MetaMask..."
       );
 
-      const transaction =
+      const tx =
         await contract.issueCredential(
           studentAddress,
-          credentialType,
-          metadataURI,
+          credentialType.trim(),
+          metadataURI.trim(),
           credentialHash
         );
 
-      setIssueStatus(
-        "Transaction submitted. Waiting for blockchain confirmation..."
+      setMessage(
+        "Transaction submitted. Waiting for confirmation..."
       );
 
       const receipt =
-        await transaction.wait();
+        await tx.wait();
 
-      console.log(
-        "Transaction receipt:",
-        receipt
+      let newCredentialId = null;
+
+      for (const log of receipt.logs) {
+        try {
+          const parsed =
+            contract.interface.parseLog(
+              log
+            );
+
+          if (
+            parsed &&
+            parsed.name ===
+              "CredentialIssued"
+          ) {
+            newCredentialId =
+              parsed.args.credentialId.toString();
+
+            break;
+          }
+        } catch {
+          // Ignore unrelated logs
+        }
+      }
+
+      setIssuedCredentialId(
+        newCredentialId ||
+          "Transaction confirmed"
       );
 
-      // ---------------------------------
-      // Try to extract CredentialIssued event
-      // ---------------------------------
-      let issuedCredentialId = "";
+      setMessage(
+        "Credential issued successfully!"
+      );
 
-      try {
-        for (
-          const log of receipt.logs
-        ) {
-          try {
-            const parsed =
-              contract.interface.parseLog(
-                log
-              );
-
-            if (
-              parsed &&
-              parsed.name ===
-                "CredentialIssued"
-            ) {
-              issuedCredentialId =
-                parsed.args.credentialId.toString();
-
-              break;
-            }
-          } catch {
-            // Ignore unrelated logs
-          }
-        }
-      } catch (error) {
-        console.log(
-          "Could not parse event:",
-          error
-        );
-      }
-
-      if (issuedCredentialId) {
-        setCredentialId(
-          issuedCredentialId
-        );
-
-        setIssueStatus(
-          `Credential issued successfully! Credential ID: ${issuedCredentialId}`
-        );
-      } else {
-        setIssueStatus(
-          "Credential issued successfully!"
-        );
-      }
-
-      // Reset form
+      // Clear form
       setStudentAddress("");
       setCredentialType("");
+      setMetadataURI("");
       setSelectedFile(null);
       setCredentialHash("");
-      setMetadataURI("");
 
-      // Reset file input
       const fileInput =
         document.getElementById(
-          "certificateFile"
+          "certificate-file"
         );
 
       if (fileInput) {
         fileInput.value = "";
       }
-
-    } catch (error) {
+    } catch (err) {
       console.error(
         "Issue credential error:",
-        error
+        err
       );
 
-      if (
-        error.code ===
-        "ACTION_REJECTED"
-      ) {
-        setIssueStatus(
+      if (err.code === 4001) {
+        setError(
           "Transaction rejected in MetaMask."
         );
       } else {
-        setIssueStatus(
-          error.reason ||
-            error.shortMessage ||
-            error.message ||
-            "Failed to issue credential."
+        setError(
+          err.reason ||
+            err.shortMessage ||
+            err.message ||
+            "Transaction failed."
         );
       }
-
     } finally {
       setIssuing(false);
     }
-  }
+  };
 
   // =========================
-  // FETCH STUDENT CREDENTIAL
+  // FETCH CREDENTIAL
   // =========================
-  async function fetchCredential(
-    id = credentialId
-  ) {
+  const fetchCredential = async (
+    event
+  ) => {
+    event.preventDefault();
+
+    setError("");
+    setMessage("");
+    setCredential(null);
+
     try {
-      setStudentStatus("");
-      setStudentCredential(null);
-
-      if (!id) {
-        setStudentStatus(
+      if (!credentialId) {
+        throw new Error(
           "Please enter a credential ID."
         );
-        return;
       }
 
-      const numericId =
-        BigInt(id);
+      if (Number(credentialId) <= 0) {
+        throw new Error(
+          "Credential ID must be greater than 0."
+        );
+      }
+
+      setFetching(true);
 
       const contract =
-        await getContract();
+        await getContract(false);
 
-      const credential =
+      const result =
         await contract.getCredential(
-          numericId
+          credentialId
         );
 
-      const formattedCredential = {
-        id: credential.id.toString(),
-        student:
-          credential.student,
-        issuer:
-          credential.issuer,
+      const data = {
+        id: result.id.toString(),
+        student: result.student,
+        issuer: result.issuer,
         credentialType:
-          credential.credentialType,
+          result.credentialType,
         metadataURI:
-          credential.metadataURI,
+          result.metadataURI,
         credentialHash:
-          credential.credentialHash,
-        issuedAt:
-          credential.issuedAt.toString(),
-        revoked:
-          credential.revoked,
+          result.credentialHash,
+        issuedAt: new Date(
+          Number(result.issuedAt) *
+            1000
+        ).toLocaleString(),
+        revoked: result.revoked,
       };
 
-      setStudentCredential(
-        formattedCredential
-      );
+      setCredential(data);
 
-      setStudentStatus(
-        "Credential loaded successfully."
+      setMessage(
+        "Credential fetched successfully."
       );
+    } catch (err) {
+      console.error(err);
 
-    } catch (error) {
-      console.error(
-        "Fetch credential error:",
-        error
+      setError(
+        err.reason ||
+          err.shortMessage ||
+          err.message ||
+          "Failed to fetch credential."
       );
-
-      setStudentStatus(
-        error.reason ||
-          error.shortMessage ||
-          error.message ||
-          "Credential not found."
-      );
+    } finally {
+      setFetching(false);
     }
-  }
+  };
 
   // =========================
   // VERIFY CREDENTIAL
   // =========================
-  async function verifyCredential(
-    id = verifyId
-  ) {
-    try {
-      setVerifyStatus("");
-      setVerificationResult(null);
+  const verifyCredential = async (
+    event
+  ) => {
+    event.preventDefault();
 
-      if (!id) {
-        setVerifyStatus(
+    setError("");
+    setMessage("");
+    setVerificationResult(null);
+
+    try {
+      if (!verifyId) {
+        throw new Error(
           "Please enter a credential ID."
         );
-        return;
       }
 
-      const numericId =
-        BigInt(id);
+      if (Number(verifyId) <= 0) {
+        throw new Error(
+          "Credential ID must be greater than 0."
+        );
+      }
+
+      setVerifying(true);
 
       const contract =
-        await getContract();
+        await getContract(false);
 
-      const valid =
+      const result =
         await contract.verifyCredential(
-          numericId
+          verifyId
         );
 
-      const credential =
-        await contract.getCredential(
-          numericId
-        );
+      setVerificationResult(result);
 
-      setVerificationResult({
-        valid,
-        id:
-          credential.id.toString(),
-        student:
-          credential.student,
-        issuer:
-          credential.issuer,
-        credentialType:
-          credential.credentialType,
-        metadataURI:
-          credential.metadataURI,
-        credentialHash:
-          credential.credentialHash,
-        issuedAt:
-          credential.issuedAt.toString(),
-        revoked:
-          credential.revoked,
-      });
-
-      if (valid) {
-        setVerifyStatus(
-          "Credential verified successfully."
+      if (result) {
+        setMessage(
+          "Credential is valid and has not been revoked."
         );
       } else {
-        setVerifyStatus(
+        setMessage(
           "Credential has been revoked."
         );
       }
+    } catch (err) {
+      console.error(err);
 
-    } catch (error) {
-      console.error(
-        "Verification error:",
-        error
+      setError(
+        err.reason ||
+          err.shortMessage ||
+          err.message ||
+          "Failed to verify credential."
       );
-
-      setVerifyStatus(
-        error.reason ||
-          error.shortMessage ||
-          error.message ||
-          "Credential verification failed."
-      );
+    } finally {
+      setVerifying(false);
     }
-  }
-
-  // =========================
-  // QR VERIFICATION
-  // =========================
-  async function verifyFromQR(
-    id
-  ) {
-    if (!id) return;
-
-    setVerifyId(id);
-
-    await verifyCredential(id);
-  }
-
-  // =========================
-  // CHECK URL FOR QR
-  // =========================
-  useEffect(() => {
-    const params =
-      new URLSearchParams(
-        window.location.search
-      );
-
-    const qrCredentialId =
-      params.get("verify");
-
-    if (qrCredentialId) {
-      setVerifyId(
-        qrCredentialId
-      );
-
-      verifyFromQR(
-        qrCredentialId
-      );
-    }
-  }, []);
+  };
 
   // =========================
   // REVOKE CREDENTIAL
   // =========================
-  async function revokeCredential() {
-    try {
-      setRevokeStatus("");
+  const revokeCredential = async (
+    event
+  ) => {
+    event.preventDefault();
 
+    setError("");
+    setMessage("");
+
+    try {
       if (!account) {
-        setRevokeStatus(
-          "Please connect the issuer wallet first."
+        throw new Error(
+          "Please connect your wallet first."
         );
-        return;
       }
 
       if (!revokeId) {
-        setRevokeStatus(
+        throw new Error(
           "Please enter a credential ID."
         );
-        return;
       }
 
-      const numericId =
-        BigInt(revokeId);
+      if (Number(revokeId) <= 0) {
+        throw new Error(
+          "Credential ID must be greater than 0."
+        );
+      }
+
+      setRevoking(true);
 
       const contract =
-        await getContract();
+        await getContract(true);
 
-      setRevokeStatus(
-        "Please confirm the revocation transaction in MetaMask..."
+      setMessage(
+        "Please confirm the transaction in MetaMask..."
       );
 
-      const transaction =
+      const tx =
         await contract.revokeCredential(
-          numericId
+          revokeId
         );
 
-      setRevokeStatus(
-        "Revocation transaction submitted. Waiting for confirmation..."
+      setMessage(
+        "Revocation submitted. Waiting for confirmation..."
       );
 
-      await transaction.wait();
+      await tx.wait();
 
-      setRevokeStatus(
+      setMessage(
         "Credential revoked successfully."
       );
 
-    } catch (error) {
-      console.error(
-        "Revoke error:",
-        error
-      );
+      setRevokeId("");
+    } catch (err) {
+      console.error(err);
 
-      if (
-        error.code ===
-        "ACTION_REJECTED"
-      ) {
-        setRevokeStatus(
+      if (err.code === 4001) {
+        setError(
           "Transaction rejected in MetaMask."
         );
       } else {
-        setRevokeStatus(
-          error.reason ||
-            error.shortMessage ||
-            error.message ||
+        setError(
+          err.reason ||
+            err.shortMessage ||
+            err.message ||
             "Failed to revoke credential."
         );
       }
+    } finally {
+      setRevoking(false);
     }
-  }
+  };
 
-  // =========================
-  // FORMAT ADDRESS
-  // =========================
-  function shortAddress(
-    address
-  ) {
-    if (!address) return "";
-
-    return `${address.slice(
-      0,
-      6
-    )}...${address.slice(-4)}`;
-  }
-
-  // =========================
-  // FORMAT DATE
-  // =========================
-  function formatDate(
-    timestamp
-  ) {
-    if (!timestamp) {
-      return "N/A";
-    }
-
-    return new Date(
-      Number(timestamp) * 1000
-    ).toLocaleString();
-  }
-
-  // =========================
-  // UI
-  // =========================
   return (
     <div className="app">
 
-      {/* =========================
-          NAVBAR
-      ========================= */}
+      {/* ================= NAVBAR ================= */}
       <nav className="navbar">
-        <div className="nav-container">
-
-          <div className="logo">
-            <span className="logo-icon">
-              ◆
-            </span>
-
-            <span>
-              SkillProof
-            </span>
-          </div>
-
-          <div className="nav-links">
-            <a href="#how-it-works">
-              How It Works
-            </a>
-
-            <a href="#features">
-              Features
-            </a>
-
-            <button
-              className="connect-btn"
-              onClick={
-                connectWallet
-              }
-            >
-              {account
-                ? shortAddress(
-                    account
-                  )
-                : "Connect Wallet"}
-            </button>
-          </div>
-
+        <div className="logo">
+          ◆SkillProof
         </div>
+
+        <div className="nav-links">
+          <a href="#how-it-works">
+            How It Works
+          </a>
+
+          <a href="#features">
+            Features
+          </a>
+
+          <a href="#issue">
+            Issue Credential
+          </a>
+
+          <a href="#student">
+            Student Dashboard
+          </a>
+
+          <a href="#verify">
+            Verify
+          </a>
+
+          <a href="#revoke">
+            Revoke
+          </a>
+        </div>
+
+        <button
+          className="connect-button"
+          onClick={connectWallet}
+          disabled={connecting}
+        >
+          {connecting
+            ? "Connecting..."
+            : account
+            ? `${account.slice(
+                0,
+                6
+              )}...${account.slice(-4)}`
+            : "Connect Wallet"}
+        </button>
       </nav>
 
-      {/* =========================
-          HERO
-      ========================= */}
+      {/* ================= HERO ================= */}
       <section className="hero">
-
         <div className="hero-content">
 
           <div className="hero-badge">
-            Blockchain-Powered Credential Verification
+            Blockchain Credential Platform
           </div>
 
           <h1>
             Own Your Credentials.
             <br />
-
             <span>
               Prove Your Skills.
             </span>
@@ -852,71 +677,199 @@ function App() {
 
           <p>
             SkillProof enables institutions
-            to issue tamper-evident digital
-            credentials that students can
-            securely share and employers can
-            instantly verify.
+            to issue trusted digital
+            credentials and allows students
+            to prove their achievements
+            through blockchain verification.
           </p>
 
-          <div className="hero-buttons">
-
-            <a
-              href="#issue"
-              className="primary-btn"
-            >
-              Issue Credential
-            </a>
-
-            <a
-              href="#verify"
-              className="secondary-btn"
-            >
-              Verify Credential
-            </a>
-
-          </div>
+          <button
+            className="primary-button"
+            onClick={connectWallet}
+          >
+            {account
+              ? "Wallet Connected"
+              : "Connect Wallet"}
+          </button>
 
         </div>
-
       </section>
 
-      {/* =========================
-          WALLET STATUS
-      ========================= */}
-      {walletStatus && (
-        <div className="status-message">
-          {walletStatus}
+      {/* ================= MESSAGES ================= */}
+      {(message || error) && (
+        <div className="message-section">
+
+          {message && (
+            <div className="success-message">
+              ✓ {message}
+            </div>
+          )}
+
+          {error && (
+            <div className="error-message">
+              ✕ {error}
+            </div>
+          )}
+
         </div>
       )}
 
-      {/* =========================
-          INSTITUTION
-      ========================= */}
+      {/* ================= HOW IT WORKS ================= */}
       <section
-        id="issue"
+        id="how-it-works"
         className="section"
       >
+        <div className="section-heading">
+          <span>HOW IT WORKS</span>
+          <h2>
+            Credentials you can trust.
+          </h2>
+        </div>
 
-        <div className="section-header">
+        <div className="cards">
 
-          <span className="section-tag">
-            INSTITUTION
-          </span>
+          <div className="card">
+            <div className="card-number">
+              01
+            </div>
+
+            <h3>
+              Issue
+            </h3>
+
+            <p>
+              Authorized issuers create
+              blockchain-backed credentials
+              for students.
+            </p>
+          </div>
+
+          <div className="card">
+            <div className="card-number">
+              02
+            </div>
+
+            <h3>
+              Own
+            </h3>
+
+            <p>
+              Students receive credentials
+              linked to their blockchain
+              wallet address.
+            </p>
+          </div>
+
+          <div className="card">
+            <div className="card-number">
+              03
+            </div>
+
+            <h3>
+              Verify
+            </h3>
+
+            <p>
+              Employers can verify the
+              authenticity and current
+              status of credentials.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ================= FEATURES ================= */}
+      <section
+        id="features"
+        className="section features-section"
+      >
+        <div className="section-heading">
+          <span>FEATURES</span>
+
+          <h2>
+            Built for trusted credentials.
+          </h2>
+        </div>
+
+        <div className="cards">
+
+          <div className="card">
+            <div className="feature-icon">
+              ⛓
+            </div>
+
+            <h3>
+              Blockchain Verified
+            </h3>
+
+            <p>
+              Credential information is
+              verified through a smart
+              contract.
+            </p>
+          </div>
+
+          <div className="card">
+            <div className="feature-icon">
+              ◈
+            </div>
+
+            <h3>
+              Decentralized
+            </h3>
+
+            <p>
+              Verification is powered by
+              blockchain rather than relying
+              only on a centralized database.
+            </p>
+          </div>
+
+          <div className="card">
+            <div className="feature-icon">
+              ✓
+            </div>
+
+            <h3>
+              Revocable
+            </h3>
+
+            <p>
+              The issuing organization can
+              revoke credentials when
+              necessary.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ================= ISSUE ================= */}
+      <section
+        id="issue"
+        className="section form-section"
+      >
+        <div className="section-heading">
+          <span>ISSUER</span>
 
           <h2>
             Issue a Credential
           </h2>
 
           <p>
-            Institutions can issue
-            blockchain-backed credentials
-            to students.
+            Connect the authorized issuer
+            wallet to create a blockchain
+            credential.
           </p>
-
         </div>
 
-        <div className="card">
+        <form
+          className="credential-form"
+          onSubmit={issueCredential}
+        >
 
+          {/* STUDENT ADDRESS */}
           <div className="form-group">
 
             <label>
@@ -926,9 +879,7 @@ function App() {
             <input
               type="text"
               placeholder="0x..."
-              value={
-                studentAddress
-              }
+              value={studentAddress}
               onChange={(e) =>
                 setStudentAddress(
                   e.target.value
@@ -938,6 +889,7 @@ function App() {
 
           </div>
 
+          {/* CREDENTIAL TYPE */}
           <div className="form-group">
 
             <label>
@@ -946,10 +898,8 @@ function App() {
 
             <input
               type="text"
-              placeholder="e.g. Machine Learning Internship"
-              value={
-                credentialType
-              }
+              placeholder="Machine Learning Internship"
+              value={credentialType}
               onChange={(e) =>
                 setCredentialType(
                   e.target.value
@@ -959,126 +909,144 @@ function App() {
 
           </div>
 
+          {/* PDF */}
           <div className="form-group">
 
             <label>
               Upload Certificate
             </label>
 
-            <input
-              id="certificateFile"
-              type="file"
-              accept="application/pdf"
-              onChange={
-                handleDocumentUpload
-              }
-            />
+            <div className="file-upload">
+
+              <input
+                id="certificate-file"
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={
+                  handleFileChange
+                }
+              />
+
+            </div>
 
             {selectedFile && (
-              <div className="file-preview">
+              <div className="selected-file">
 
-                <strong>
-                  Selected file:
-                </strong>
+                <div>
+                  <strong>
+                    Selected file:
+                  </strong>
 
-                <span>
-                  {selectedFile.name}
-                </span>
+                  <span>
+                    {selectedFile.name}
+                  </span>
+                </div>
+
+                <small>
+                  {(
+                    selectedFile.size /
+                    1024
+                  ).toFixed(1)}{" "}
+                  KB
+                </small>
 
               </div>
             )}
 
           </div>
 
-          {uploading && (
-            <div className="status-message">
-              Uploading certificate to
-              IPFS and generating hash...
-            </div>
-          )}
+          {/* HASH */}
+          <div className="form-group">
 
-          {credentialHash && (
-            <div className="form-group">
+            <label>
+              SHA-256 Certificate Hash
+            </label>
 
-              <label>
-                SHA-256 Certificate Hash
-              </label>
+            <input
+              type="text"
+              value={credentialHash}
+              placeholder="Upload a PDF to generate its hash"
+              readOnly
+            />
 
-              <input
-                className="hash-input"
-                type="text"
-                value={
-                  credentialHash
-                }
-                readOnly
-              />
-
-              <small className="hash-success">
+            {credentialHash && (
+              <div className="hash-success">
                 ✓ Certificate fingerprint
                 generated
-              </small>
+              </div>
+            )}
 
-            </div>
-          )}
+          </div>
 
-          {metadataURI && (
-            <div className="form-group">
+          {/* IPFS */}
+          <div className="form-group">
 
-              <label>
-                IPFS Metadata URI
-              </label>
+            <label>
+              IPFS Metadata URI
+            </label>
 
-              <input
-                type="text"
-                value={
-                  metadataURI
-                }
-                readOnly
-              />
+            <input
+              type="text"
+              placeholder="ipfs://..."
+              value={metadataURI}
+              onChange={(e) =>
+                setMetadataURI(
+                  e.target.value
+                )
+              }
+            />
 
-              <small className="hash-success">
-                ✓ Certificate stored on
-                IPFS
-              </small>
+            <small className="field-help">
+              Enter the IPFS URI containing
+              the certificate metadata.
+            </small>
 
-            </div>
-          )}
+          </div>
 
           <button
-            className="primary-btn full-width"
-            onClick={
-              issueCredential
-            }
-            disabled={
-              issuing ||
-              uploading
-            }
+            type="submit"
+            className="primary-button issue-button"
+            disabled={issuing}
           >
             {issuing
               ? "Issuing Credential..."
               : "Issue Credential"}
           </button>
 
-          {issueStatus && (
-            <div className="status-message">
-              {issueStatus}
-            </div>
-          )}
+        </form>
 
-        </div>
+        {issuedCredentialId && (
+          <div className="issued-box">
+
+            <div className="issued-check">
+              ✓
+            </div>
+
+            <div>
+              <h3>
+                Credential Issued
+              </h3>
+
+              <p>
+                Credential ID:{" "}
+                <strong>
+                  {issuedCredentialId}
+                </strong>
+              </p>
+            </div>
+
+          </div>
+        )}
 
       </section>
 
-      {/* =========================
-          STUDENT DASHBOARD
-      ========================= */}
-      <section className="section">
-
-        <div className="section-header">
-
-          <span className="section-tag">
-            STUDENT
-          </span>
+      {/* ================= STUDENT ================= */}
+      <section
+        id="student"
+        className="section form-section"
+      >
+        <div className="section-heading">
+          <span>STUDENT</span>
 
           <h2>
             Your Credential
@@ -1088,648 +1056,284 @@ function App() {
             View and share your verified
             blockchain credential.
           </p>
-
         </div>
 
-        <div className="card">
+        <form
+          className="small-form"
+          onSubmit={fetchCredential}
+        >
 
-          <div className="form-group">
-
-            <label>
-              Credential ID
-            </label>
-
-            <input
-              type="number"
-              placeholder="Enter credential ID"
-              value={
-                credentialId
-              }
-              onChange={(e) =>
-                setCredentialId(
-                  e.target.value
-                )
-              }
-            />
-
-          </div>
+          <input
+            type="number"
+            min="1"
+            placeholder="Enter credential ID"
+            value={credentialId}
+            onChange={(e) =>
+              setCredentialId(
+                e.target.value
+              )
+            }
+          />
 
           <button
-            className="primary-btn"
-            onClick={() =>
-              fetchCredential()
-            }
+            type="submit"
+            className="primary-button"
+            disabled={fetching}
           >
-            View Credential
+            {fetching
+              ? "Fetching..."
+              : "Fetch Credential"}
           </button>
 
-          {studentStatus && (
-            <div className="status-message">
-              {studentStatus}
-            </div>
-          )}
+        </form>
 
-          {studentCredential && (
-            <div className="credential-card">
+        {credential && (
+          <div className="credential-result">
 
-              <div className="credential-header">
-
+            <div className="credential-header">
+              <div>
                 <span>
-                  BLOCKCHAIN CREDENTIAL
+                  VERIFIED CREDENTIAL
                 </span>
 
-                <span
-                  className={
-                    studentCredential.revoked
-                      ? "status revoked"
-                      : "status verified"
-                  }
-                >
-                  {studentCredential.revoked
-                    ? "REVOKED"
-                    : "VERIFIED"}
-                </span>
-
+                <h3>
+                  {credential.credentialType}
+                </h3>
               </div>
 
-              <h3>
-                {
-                  studentCredential.credentialType
+              <div
+                className={
+                  credential.revoked
+                    ? "status revoked"
+                    : "status active"
                 }
-              </h3>
+              >
+                {credential.revoked
+                  ? "REVOKED"
+                  : "ACTIVE"}
+              </div>
+            </div>
 
-              <div className="credential-details">
+            <div className="credential-grid">
 
-                <p>
-                  <strong>
-                    Credential ID:
-                  </strong>{" "}
-                  {
-                    studentCredential.id
-                  }
-                </p>
+              <div>
+                <span>
+                  Credential ID
+                </span>
 
-                <p>
-                  <strong>
-                    Student:
-                  </strong>{" "}
-                  {
-                    shortAddress(
-                      studentCredential.student
-                    )
-                  }
-                </p>
-
-                <p>
-                  <strong>
-                    Issuer:
-                  </strong>{" "}
-                  {
-                    shortAddress(
-                      studentCredential.issuer
-                    )
-                  }
-                </p>
-
-                <p>
-                  <strong>
-                    Issued:
-                  </strong>{" "}
-                  {formatDate(
-                    studentCredential.issuedAt
-                  )}
-                </p>
-
-                <p>
-                  <strong>
-                    Certificate Hash:
-                  </strong>
-                </p>
-
-                <code>
-                  {
-                    studentCredential.credentialHash
-                  }
-                </code>
-
+                <strong>
+                  #{credential.id}
+                </strong>
               </div>
 
-              <div className="qr-section">
+              <div>
+                <span>
+                  Student
+                </span>
 
-                <h4>
-                  Verify with QR
-                </h4>
+                <strong className="address">
+                  {credential.student}
+                </strong>
+              </div>
 
-                <QRCodeCanvas
-                  value={`${window.location.origin}/?verify=${studentCredential.id}`}
-                  size={220}
-                  level="H"
-                />
+              <div>
+                <span>
+                  Issuer
+                </span>
 
-                <p>
-                  Scan this QR code to
-                  verify this credential.
-                </p>
+                <strong className="address">
+                  {credential.issuer}
+                </strong>
+              </div>
 
+              <div>
+                <span>
+                  Issued At
+                </span>
+
+                <strong>
+                  {credential.issuedAt}
+                </strong>
               </div>
 
             </div>
-          )}
 
-        </div>
+            <div className="credential-detail">
+
+              <span>
+                IPFS Metadata
+              </span>
+
+              <p>
+                {credential.metadataURI}
+              </p>
+
+            </div>
+
+            <div className="credential-detail">
+
+              <span>
+                SHA-256 Certificate Hash
+              </span>
+
+              <p className="hash-text">
+                {credential.credentialHash}
+              </p>
+
+            </div>
+
+          </div>
+        )}
 
       </section>
 
-      {/* =========================
-          EMPLOYER VERIFICATION
-      ========================= */}
+      {/* ================= VERIFY ================= */}
       <section
         id="verify"
-        className="section"
+        className="section verify-section"
       >
-
-        <div className="section-header">
-
-          <span className="section-tag">
-            EMPLOYER
-          </span>
+        <div className="section-heading">
+          <span>VERIFICATION</span>
 
           <h2>
             Verify a Credential
           </h2>
 
           <p>
-            Employers can verify a
-            credential directly against
-            blockchain records.
+            Anyone can verify whether a
+            credential is currently valid.
           </p>
-
         </div>
 
-        <div className="card">
+        <form
+          className="small-form"
+          onSubmit={verifyCredential}
+        >
 
-          <div className="form-group">
-
-            <label>
-              Credential ID
-            </label>
-
-            <input
-              type="number"
-              placeholder="Enter credential ID"
-              value={
-                verifyId
-              }
-              onChange={(e) =>
-                setVerifyId(
-                  e.target.value
-                )
-              }
-            />
-
-          </div>
+          <input
+            type="number"
+            min="1"
+            placeholder="Enter credential ID"
+            value={verifyId}
+            onChange={(e) =>
+              setVerifyId(
+                e.target.value
+              )
+            }
+          />
 
           <button
-            className="primary-btn"
-            onClick={() =>
-              verifyCredential()
-            }
+            type="submit"
+            className="primary-button"
+            disabled={verifying}
           >
-            Verify Credential
+            {verifying
+              ? "Verifying..."
+              : "Verify Credential"}
           </button>
 
-          {verifyStatus && (
-            <div className="status-message">
-              {verifyStatus}
+        </form>
+
+        {verificationResult !== null && (
+          <div
+            className={
+              verificationResult
+                ? "verification valid"
+                : "verification invalid"
+            }
+          >
+
+            <div className="verification-icon">
+              {verificationResult
+                ? "✓"
+                : "✕"}
             </div>
-          )}
 
-          {verificationResult && (
-            <div
-              className={
-                verificationResult.valid
-                  ? "verification-result verified-result"
-                  : "verification-result revoked-result"
-              }
-            >
-
-              <div className="verification-icon">
-                {verificationResult.valid
-                  ? "✓"
-                  : "!"}
-              </div>
+            <div>
 
               <h3>
-                {verificationResult.valid
+                {verificationResult
                   ? "Credential Verified"
                   : "Credential Revoked"}
               </h3>
 
               <p>
-                {verificationResult.valid
+                {verificationResult
                   ? "This credential exists on the blockchain and has not been revoked."
-                  : "This credential exists on the blockchain but has been revoked by the issuer."}
+                  : "This credential has been revoked by its issuer."}
               </p>
 
-              <div className="verification-details">
-
-                <p>
-                  <strong>
-                    Credential:
-                  </strong>{" "}
-                  {
-                    verificationResult.credentialType
-                  }
-                </p>
-
-                <p>
-                  <strong>
-                    Credential ID:
-                  </strong>{" "}
-                  {
-                    verificationResult.id
-                  }
-                </p>
-
-                <p>
-                  <strong>
-                    Student:
-                  </strong>{" "}
-                  {
-                    shortAddress(
-                      verificationResult.student
-                    )
-                  }
-                </p>
-
-                <p>
-                  <strong>
-                    Issuer:
-                  </strong>{" "}
-                  {
-                    shortAddress(
-                      verificationResult.issuer
-                    )
-                  }
-                </p>
-
-                <p>
-                  <strong>
-                    Issued:
-                  </strong>{" "}
-                  {formatDate(
-                    verificationResult.issuedAt
-                  )}
-                </p>
-
-                <p>
-                  <strong>
-                    Status:
-                  </strong>{" "}
-                  {verificationResult.revoked
-                    ? "REVOKED"
-                    : "VALID"}
-                </p>
-
-              </div>
-
             </div>
-          )}
 
-        </div>
+          </div>
+        )}
 
       </section>
 
-      {/* =========================
-          REVOCATION
-      ========================= */}
-      <section className="section">
-
-        <div className="section-header">
-
-          <span className="section-tag">
-            INSTITUTION
-          </span>
+      {/* ================= REVOKE ================= */}
+      <section
+        id="revoke"
+        className="section form-section"
+      >
+        <div className="section-heading">
+          <span>ISSUER</span>
 
           <h2>
             Revoke Credential
           </h2>
 
           <p>
-            Issuers can revoke credentials
-            when they are no longer valid.
+            Only the original issuer of a
+            credential can revoke it.
           </p>
-
         </div>
 
-        <div className="card">
+        <form
+          className="small-form"
+          onSubmit={revokeCredential}
+        >
 
-          <div className="form-group">
-
-            <label>
-              Credential ID
-            </label>
-
-            <input
-              type="number"
-              placeholder="Enter credential ID"
-              value={
-                revokeId
-              }
-              onChange={(e) =>
-                setRevokeId(
-                  e.target.value
-                )
-              }
-            />
-
-          </div>
+          <input
+            type="number"
+            min="1"
+            placeholder="Enter credential ID"
+            value={revokeId}
+            onChange={(e) =>
+              setRevokeId(
+                e.target.value
+              )
+            }
+          />
 
           <button
-            className="secondary-btn"
-            onClick={
-              revokeCredential
-            }
+            type="submit"
+            className="danger-button"
+            disabled={revoking}
           >
-            Revoke Credential
+            {revoking
+              ? "Revoking..."
+              : "Revoke Credential"}
           </button>
 
-          {revokeStatus && (
-            <div className="status-message">
-              {revokeStatus}
-            </div>
-          )}
-
-        </div>
-
+        </form>
       </section>
 
-      {/* =========================
-          FEATURES
-      ========================= */}
-      <section
-        id="features"
-        className="section features-section"
-      >
+      {/* ================= FOOTER ================= */}
+      <footer>
 
-        <div className="section-header">
-
-          <span className="section-tag">
-            FEATURES
-          </span>
-
-          <h2>
-            Why SkillProof?
-          </h2>
-
+        <div className="footer-logo">
+          ◆SkillProof
         </div>
 
-        <div className="feature-grid">
-
-          <div className="feature-card">
-
-            <div className="feature-icon">
-              ◈
-            </div>
-
-            <h3>
-              Blockchain Verification
-            </h3>
-
-            <p>
-              Credential records are stored
-              on blockchain, making them
-              tamper-evident and independently
-              verifiable.
-            </p>
-
-          </div>
-
-          <div className="feature-card">
-
-            <div className="feature-icon">
-              #
-            </div>
-
-            <h3>
-              Document Hashing
-            </h3>
-
-            <p>
-              Every uploaded certificate
-              receives a unique SHA-256
-              fingerprint that can be used
-              to detect document changes.
-            </p>
-
-          </div>
-
-          <div className="feature-card">
-
-            <div className="feature-icon">
-              ◫
-            </div>
-
-            <h3>
-              IPFS Storage
-            </h3>
-
-            <p>
-              Certificate documents are
-              stored off-chain using
-              decentralized IPFS storage.
-            </p>
-
-          </div>
-
-          <div className="feature-card">
-
-            <div className="feature-icon">
-              ✓
-            </div>
-
-            <h3>
-              Instant Verification
-            </h3>
-
-            <p>
-              Employers can verify credential
-              records using a credential ID
-              or QR code.
-            </p>
-
-          </div>
-
-          <div className="feature-card">
-
-            <div className="feature-icon">
-              ↻
-            </div>
-
-            <h3>
-              Revocation
-            </h3>
-
-            <p>
-              Institutions can revoke
-              credentials, and verification
-              immediately reflects the
-              revoked status.
-            </p>
-
-          </div>
-
-          <div className="feature-card">
-
-            <div className="feature-icon">
-              ⛓
-            </div>
-
-            <h3>
-              Student Ownership
-            </h3>
-
-            <p>
-              Credentials are associated
-              with the student's blockchain
-              wallet address.
-            </p>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* =========================
-          HOW IT WORKS
-      ========================= */}
-      <section
-        id="how-it-works"
-        className="section"
-      >
-
-        <div className="section-header">
-
-          <span className="section-tag">
-            WORKFLOW
-          </span>
-
-          <h2>
-            How SkillProof Works
-          </h2>
-
-        </div>
-
-        <div className="steps">
-
-          <div className="step">
-
-            <div className="step-number">
-              01
-            </div>
-
-            <h3>
-              Issue
-            </h3>
-
-            <p>
-              An institution uploads a
-              certificate and issues a
-              credential to the student's
-              wallet.
-            </p>
-
-          </div>
-
-          <div className="step">
-
-            <div className="step-number">
-              02
-            </div>
-
-            <h3>
-              Store
-            </h3>
-
-            <p>
-              The certificate is stored on
-              IPFS while its hash and
-              verification data are recorded
-              on blockchain.
-            </p>
-
-          </div>
-
-          <div className="step">
-
-            <div className="step-number">
-              03
-            </div>
-
-            <h3>
-              Share
-            </h3>
-
-            <p>
-              Students can view their
-              credential and share its
-              verification QR code.
-            </p>
-
-          </div>
-
-          <div className="step">
-
-            <div className="step-number">
-              04
-            </div>
-
-            <h3>
-              Verify
-            </h3>
-
-            <p>
-              Employers check the credential
-              directly against blockchain
-              records.
-            </p>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* =========================
-          FOOTER
-      ========================= */}
-      <footer className="footer">
-
-        <div className="footer-content">
-
-          <div className="logo">
-            <span className="logo-icon">
-              ◆
-            </span>
-
-            <span>
-              SkillProof
-            </span>
-          </div>
-
-          <p>
-            Decentralized Credential
-            Verification Platform
-          </p>
-
-          <p>
-            Built with React, Solidity,
-            Hardhat, Ethereum, IPFS and
-            MetaMask.
-          </p>
-
-        </div>
+        <p>
+          Own Your Credentials. Prove Your
+          Skills.
+        </p>
+
+        <small>
+          © 2026 SkillProof — Decentralized
+          Credential Platform
+        </small>
 
       </footer>
 

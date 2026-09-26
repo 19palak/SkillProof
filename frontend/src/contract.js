@@ -1,16 +1,277 @@
 export const CONTRACT_ADDRESS =
-  "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
 
 export const CONTRACT_ABI = [
-  "function issueCredential(address student, string credentialType, string metadataURI, bytes32 credentialHash) returns (uint256)",
+  {
+    inputs: [],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
 
-  "function getCredential(uint256 credentialId) view returns (uint256 id, address student, address issuer, string credentialType, string metadataURI, bytes32 credentialHash, uint256 issuedAt, bool revoked)",
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "issuer",
+        type: "address",
+      },
+    ],
+    name: "IssuerAuthorized",
+    type: "event",
+  },
 
-  "function verifyCredential(uint256 credentialId) view returns (bool)",
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "issuer",
+        type: "address",
+      },
+    ],
+    name: "IssuerRevoked",
+    type: "event",
+  },
 
-  "function revokeCredential(uint256 credentialId)",
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "uint256",
+        name: "credentialId",
+        type: "uint256",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "student",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "issuer",
+        type: "address",
+      },
+    ],
+    name: "CredentialIssued",
+    type: "event",
+  },
 
-  "function authorizedIssuers(address) view returns (bool)",
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "uint256",
+        name: "credentialId",
+        type: "uint256",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "issuer",
+        type: "address",
+      },
+    ],
+    name: "CredentialRevoked",
+    type: "event",
+  },
 
-  "function owner() view returns (address)"
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "issuer",
+        type: "address",
+      },
+    ],
+    name: "authorizeIssuer",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    name: "authorizedIssuers",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "credentialId",
+        type: "uint256",
+      },
+    ],
+    name: "getCredential",
+    outputs: [
+      {
+        components: [
+          {
+            internalType: "uint256",
+            name: "id",
+            type: "uint256",
+          },
+          {
+            internalType: "address",
+            name: "student",
+            type: "address",
+          },
+          {
+            internalType: "address",
+            name: "issuer",
+            type: "address",
+          },
+          {
+            internalType: "string",
+            name: "credentialType",
+            type: "string",
+          },
+          {
+            internalType: "string",
+            name: "metadataURI",
+            type: "string",
+          },
+          {
+            internalType: "bytes32",
+            name: "credentialHash",
+            type: "bytes32",
+          },
+          {
+            internalType: "uint256",
+            name: "issuedAt",
+            type: "uint256",
+          },
+          {
+            internalType: "bool",
+            name: "revoked",
+            type: "bool",
+          },
+        ],
+        internalType: "struct SkillProof.Credential",
+        name: "",
+        type: "tuple",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "student",
+        type: "address",
+      },
+      {
+        internalType: "string",
+        name: "credentialType",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "metadataURI",
+        type: "string",
+      },
+      {
+        internalType: "bytes32",
+        name: "credentialHash",
+        type: "bytes32",
+      },
+    ],
+    name: "issueCredential",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+
+  {
+    inputs: [],
+    name: "owner",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "credentialId",
+        type: "uint256",
+      },
+    ],
+    name: "revokeCredential",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "issuer",
+        type: "address",
+      },
+    ],
+    name: "revokeIssuer",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "credentialId",
+        type: "uint256",
+      },
+    ],
+    name: "verifyCredential",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
 ];
