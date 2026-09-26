@@ -73,7 +73,7 @@ MetaMask is used to connect the user's blockchain wallet with the application.
 
 ## 🏗️ System Workflow
 
-```text
+
 Institution / Issuer
         |
         | Issue Credential
@@ -93,7 +93,7 @@ Institution / Issuer
         ↓               ↓
  View Credential   Verify Credential
 
-```
+
 ### 🛠️ Technology Stack
 -Frontend: React , JavaScript , Vite , CSS
 
@@ -223,23 +223,23 @@ A publicly accessible blockchain deployment is required for fully
 decentralized public access.
 
 📍 Current Smart Contract
-Current development contract address:
+-Current development contract address:
 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
-This address corresponds to the local Hardhat development network and is
+-This address corresponds to the local Hardhat development network and is
 not a public mainnet/testnet contract.
 
 
 🔮 Future Scope
-Future improvements could include:
-Public blockchain/testnet deployment
-Real IPFS storage for credential documents
-QR-code based credential verification
-Institution dashboards
-Employer dashboards
-Multiple credential formats
-NFT-based credentials
-On-chain credential history
-Mobile application
-Improved identity and access management
+-Future improvements could include:
+-Public blockchain/testnet deployment
+-Real IPFS storage for credential documents
+-QR-code based credential verification
+-Institution dashboards
+-Employer dashboards
+-Multiple credential formats
+-NFT-based credentials
+-On-chain credential history
+-Mobile application
+-Improved identity and access management
 
 
