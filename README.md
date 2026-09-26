@@ -133,12 +133,7 @@ SkillProof/
 ⚙️ Installation and Setup
 
 Prerequisites
-Make sure you have installed:
-Node.js
-npm
-Git
-MetaMask
-VS Code
+Make sure you have installed: Node.js , npm , Git , MetaMask , VS Code
 
 1. Clone the Repository
 git clone https://github.com/19palak/SkillProof.git
